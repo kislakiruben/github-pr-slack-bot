@@ -35,7 +35,7 @@ function processPayload(req, res) {
   const localSignature = 'sha1=' + hmac.digest('hex');
 
   if (localSignature !== remoteSignature) {
-    res.status(401).end();
+    res.status(401).send(`Signatures didn't match! Make sure the Github secret is correct.`);
     return;
   }
 
