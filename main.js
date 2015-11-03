@@ -83,7 +83,7 @@ function processPayload(req, res) {
 
     res.end();
   } else {
-    res.status(204);
+    res.status(204).end();
   }
 }
 
