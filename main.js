@@ -2,25 +2,17 @@
 
 const bodyParser = require("body-parser");
 const express = require('express');
-const GitHubApi = require('github');
 const Slack = require('slack-node');
 
 const users = require('./userMapping');
 const config = require('./config');
 
 const slack = new Slack();
-const github = new GitHubApi({
-  version: '3.0.0',
-});
 const app = express();
 
 app.use(bodyParser.json());
 
 slack.setWebhook(config.webhook);
-github.authenticate({
-  type: 'oauth',
-  token: config.githubApiToken
-});
 
 app.post('/', function(req, res) {
   if (req.body.pull_request && req.body.action === 'opened') {
