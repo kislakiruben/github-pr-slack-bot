@@ -42,6 +42,7 @@ function processPayload(req, res) {
     const fields = [];
     const pr = payload.pull_request;
     const message = `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`;
+    const fallback = `New pull request ${pr.html_url}`;
 
     const authorField = {
       title: 'Opened by',
@@ -61,6 +62,7 @@ function processPayload(req, res) {
     }
 
     const attachment = {
+      fallback: fallback,
       color: '#36a64f',
       text: pr.body,
       title: pr.title,
