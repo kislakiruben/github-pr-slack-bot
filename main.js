@@ -89,8 +89,7 @@ function mapUserToSlack(githubUserName, userMap) {
 }
 
 const server = app.listen(config.port, function() {
-  const host = server.address().address;
   const port = server.address().port;
 
-  console.log('Listening for pull requests on http://%s:%s', host, port);
+  console.log('Listening for pull requests on port %s', port);
 });
