@@ -1,23 +1,46 @@
 'use strict';
 
+const config = require('./config');
 const bodyParser = require("body-parser");
 const express = require('express');
 const Slack = require('slack-node');
+const Crypto = require('crypto');
 
 const users = require('./userMapping');
-const config = require('./config');
+
+if (!config.webhook) {
+  console.log("Set the SLACK_HOOK_URL environment variable.");
+  console.log("Exiting...");
+  process.exit(0);
+  return;
+}
 
 const slack = new Slack();
 const app = express();
 
-app.use(bodyParser.json());
-
 slack.setWebhook(config.webhook);
+app.use(bodyParser.json());
+app.post('/', processPayload);
 
-app.post('/', function(req, res) {
-  if (req.body.pull_request && req.body.action === 'opened') {
+function processPayload(req, res) {
+  if (!config.githubSecret) {
+    res.status(500).send("Set the GITHUB_SECRET environment variable.");
+    return;
+  }
+
+  const remoteSignature = req.get('X-Hub-Signature');
+  const payload = req.body;
+  const hmac = Crypto.createHmac('sha1', config.githubSecret).update(JSON.stringify(payload));
+  const localSignature = 'sha1=' + hmac.digest('hex');
+
+  if (localSignature !== remoteSignature) {
+    res.status(401).end();
+    return;
+  }
+
+  if (payload.pull_request && payload.action === 'opened') {
     const fields = [];
-    const pr = req.body.pull_request;
+    const pr = payload.pull_request;
     const message = `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`;
 
     const authorField = {
@@ -47,17 +70,17 @@ app.post('/', function(req, res) {
     };
 
     slack.webhook({
-      channel: config.channel,
-      username: config.bot,
       text: message,
       attachments: [ attachment ]
     }, function(err, res) {
       console.log(err);
     });
-  }
 
-  res.end();
-});
+    res.end();
+  } else {
+    res.status(204);
+  }
+}
 
 function mapUserToSlack(githubUserName, userMap) {
   const slackUserName = userMap[githubUserName];
