@@ -20,6 +20,7 @@ const app = express();
 
 slack.setWebhook(config.webhook);
 app.use(bodyParser.json());
+app.use(express.static('static'));
 app.post('/', processPayload);
 
 function processPayload(req, res) {
@@ -43,6 +44,7 @@ function processPayload(req, res) {
     const pr = payload.pull_request;
     const message = `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`;
     const fallback = `New pull request ${pr.html_url}`;
+    const thumb = `${req.protocol}://${req.get('host')}/icon.png`;
 
     const authorField = {
       title: 'Opened by',
@@ -68,7 +70,8 @@ function processPayload(req, res) {
       title: pr.title,
       title_link: pr.html_url,
       mrkdwn_in: [ 'text' ],
-      fields: fields
+      fields: fields,
+      thumb_url: thumb
     };
 
     slack.webhook({
