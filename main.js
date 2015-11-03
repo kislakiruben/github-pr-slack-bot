@@ -9,8 +9,8 @@ const Crypto = require('crypto');
 const users = require('./userMapping');
 
 if (!config.webhook) {
-  console.log("Set the SLACK_HOOK_URL environment variable.");
-  console.log("Exiting...");
+  console.log('Set the SLACK_HOOK_URL environment variable.');
+  console.log('Exiting...');
   process.exit(0);
   return;
 }
@@ -25,7 +25,7 @@ app.post('/', processPayload);
 
 function processPayload(req, res) {
   if (!config.githubSecret) {
-    res.status(500).send("Set the GITHUB_SECRET environment variable.");
+    res.status(500).send('Set the GITHUB_SECRET environment variable.');
     return;
   }
 
