@@ -1,7 +1,7 @@
 {
   "name": "github-pr",
   "version": "1.0.0",
-  "description": "A Slack bot for getting PRs from github",
+  "description": "Node app to send Github pull requests to Slack",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
