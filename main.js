@@ -91,9 +91,11 @@ function processPayload(req, res) {
 }
 
 function mapUserToSlack(githubUserName, userMap) {
-  const slackUserName = userMap[githubUserName];
+  const slackUser = userMap[githubUserName];
+  const formattedSlackUser = (slackUser) ? `<@${slackUser}|${slackUser}>` : null;
+  const formattedGithubUser = `<https://github.com/${githubUserName}|${githubUserName}>`;
 
-  return (slackUserName) ? `<@${slackUserName}|${slackUserName}>` : githubUserName;
+  return formattedSlackUser || formattedGithubUser;
 }
 
 const server = app.listen(config.port, function() {
