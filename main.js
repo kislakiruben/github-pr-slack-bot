@@ -9,8 +9,7 @@ const Crypto = require('crypto');
 const users = require('./userMapping');
 
 if (!config.webhook) {
-  console.log('Set the SLACK_HOOK_URL environment variable.');
-  console.log('Exiting...');
+  console.log(`Set the SLACK_HOOK_URL environment variable. Exiting...`);
   process.exit(0);
   return;
 }
@@ -25,14 +24,14 @@ app.post('/', processPayload);
 
 function processPayload(req, res) {
   if (!config.githubSecret) {
-    res.status(500).send('Set the GITHUB_SECRET environment variable.');
+    res.status(500).send(`Set the GITHUB_SECRET environment variable.`);
     return;
   }
 
   const remoteSignature = req.get('X-Hub-Signature');
   const payload = req.body;
   const hmac = Crypto.createHmac('sha1', config.githubSecret).update(JSON.stringify(payload));
-  const localSignature = 'sha1=' + hmac.digest('hex');
+  const localSignature = `sha1=${hmac.digest('hex')}`;
 
   if (localSignature !== remoteSignature) {
     res.status(401).send(`Signatures didn't match! Make sure the Github secret is correct.`);
@@ -42,21 +41,25 @@ function processPayload(req, res) {
   if (payload.pull_request && payload.action === 'opened') {
     const fields = [];
     const pr = payload.pull_request;
+
     const message = `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`;
     const fallback = `New pull request ${pr.html_url}`;
     const thumb = `${req.protocol}://${req.get('host')}/icon.png`;
+    const authorUser = mapUserToSlack(pr.user.login, users);
 
     const authorField = {
       title: 'Opened by',
-      value: mapUserToSlack(pr.user.login, users),
+      value: authorUser,
       short: true
     };
+
     fields.push(authorField);
 
     if (pr.assignee) {
+      const assigneeUser = mapUserToSlack(pr.assignee.login, users);
       const assigneeField = {
         title: 'Assigned to',
-        value: mapUserToSlack(pr.assignee.login, users),
+        value: assigneeUser,
         short: true
       };
 
@@ -64,14 +67,14 @@ function processPayload(req, res) {
     }
 
     const attachment = {
-      fallback: fallback,
-      color: '#36a64f',
-      text: pr.body,
-      title: pr.title,
-      title_link: pr.html_url,
-      mrkdwn_in: [ 'text' ],
-      fields: fields,
-      thumb_url: thumb
+      fallback:     fallback,
+      color:        '#36a64f',
+      text:         pr.body,
+      title:        pr.title,
+      title_link:   pr.html_url,
+      mrkdwn_in:    [ 'text' ],
+      fields:       fields,
+      thumb_url:    thumb
     };
 
     slack.webhook({
@@ -96,5 +99,5 @@ function mapUserToSlack(githubUserName, userMap) {
 const server = app.listen(config.port, function() {
   const port = server.address().port;
 
-  console.log('Listening for pull requests on port %s', port);
+  console.log(`Listening for pull requests on port ${port}`);
 });
