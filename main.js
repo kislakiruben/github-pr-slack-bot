@@ -55,11 +55,23 @@ function processPayload(req, res) {
 
     fields.push(authorField);
 
-    if (pr.assignee) {
-      const assigneeUser = mapUserToSlack(pr.assignee.login, users);
+    if (pr.assignees) {
+      let assigneeUsers = '';
+
+      pr.assignees.forEach(function(assignee, index) {
+        if (index > 0) {
+          if (index === pr.assignees.length - 1) {
+            assigneeUsers += ' and ';
+          } else {
+            assigneeUsers += ', ';
+          }
+        }
+        assigneeUsers += mapUserToSlack(assignee.login, users);
+      });
+
       const assigneeField = {
         title: 'Assigned to',
-        value: assigneeUser,
+        value: assigneeUsers,
         short: true
       };
 
