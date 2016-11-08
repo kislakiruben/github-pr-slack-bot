@@ -55,7 +55,7 @@ function processPayload(req, res) {
 
     fields.push(authorField);
 
-    if (pr.assignees) {
+    if (pr.assignees && pr.assignees.length > 0) {
       let assigneeUsers = '';
 
       pr.assignees.forEach(function(assignee, index) {
