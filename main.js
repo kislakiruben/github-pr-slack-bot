@@ -6,7 +6,7 @@ const express = require('express');
 const Slack = require('slack-node');
 const Crypto = require('crypto');
 
-const users = require('./userMapping');
+const slackUsers = require('./userMapping');
 
 if (!config.webhook) {
   console.log(`Set the SLACK_HOOK_URL environment variable. Exiting...`);
@@ -42,18 +42,11 @@ function processPayload(req, res) {
     const fields = [];
     const pr = payload.pull_request;
 
-    const message = `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`;
-    const fallback = `New pull request ${pr.html_url}`;
-    const thumb = `${req.protocol}://${req.get('host')}/icon.png`;
-    const authorUser = mapUserToSlack(pr.user.login, users);
-
-    const authorField = {
+    fields.push({
       title: 'Opened by',
-      value: authorUser,
-      short: true
-    };
-
-    fields.push(authorField);
+      value: mapGithubUserToSlack(pr.user.login),
+      short: true,
+    });
 
     if (pr.assignees && pr.assignees.length > 0) {
       let assigneeUsers = '';
@@ -66,32 +59,51 @@ function processPayload(req, res) {
             assigneeUsers += ', ';
           }
         }
-        assigneeUsers += mapUserToSlack(assignee.login, users);
+        assigneeUsers += mapGithubUserToSlack(assignee.login);
       });
 
-      const assigneeField = {
+      fields.push({
         title: 'Assigned to',
         value: assigneeUsers,
-        short: true
-      };
-
-      fields.push(assigneeField);
+        short: true,
+      });
     }
 
-    const attachment = {
-      fallback:     fallback,
-      color:        '#36a64f',
-      text:         pr.body,
-      title:        pr.title,
-      title_link:   pr.html_url,
-      mrkdwn_in:    [ 'text' ],
-      fields:       fields,
-      thumb_url:    thumb
-    };
+    if (pr.requested_reviewers && pr.requested_reviewers.length > 0) {
+      let reviewers = '';
+
+      pr.requested_reviewers.forEach(function(reviewer, index) {
+        if (index > 0) {
+          if (index === pr.requested_reviewers.length - 1) {
+            reviewers += ' and ';
+          } else {
+            reviewers += ', ';
+          }
+        }
+        reviewers += mapGithubUserToSlack(reviewer.login);
+      });
+
+      fields.push({
+        title: 'Reviewers',
+        value: reviewers,
+        short: true,
+      });
+    }
 
     slack.webhook({
-      text: message,
-      attachments: [ attachment ]
+      text: `New pull request submitted to <${pr.head.repo.html_url}|${pr.head.repo.full_name}>`,
+      attachments: [
+        {
+          fallback:     `New pull request ${pr.html_url}`,
+          color:        '#36a64f',
+          text:         pr.body,
+          title:        pr.title,
+          title_link:   pr.html_url,
+          mrkdwn_in:    [ 'text' ],
+          fields:       fields,
+          thumb_url:    `${req.protocol}://${req.get('host')}/icon.png`,
+        },
+      ],
     }, function(err, res) {
       console.log(err);
     });
@@ -102,12 +114,10 @@ function processPayload(req, res) {
   }
 }
 
-function mapUserToSlack(githubUserName, userMap) {
-  const slackUser = userMap[githubUserName];
-  const formattedSlackUser = (slackUser) ? `<@${slackUser}|${slackUser}>` : null;
-  const formattedGithubUser = `<https://github.com/${githubUserName}|${githubUserName}>`;
+function mapGithubUserToSlack(githubUserName) {
+  const slackUser = slackUsers[githubUserName];
 
-  return formattedSlackUser || formattedGithubUser;
+  return slackUser ? `<@${slackUser}>` : `<https://github.com/${githubUserName}|${githubUserName}>`;
 }
 
 const server = app.listen(config.port, function() {

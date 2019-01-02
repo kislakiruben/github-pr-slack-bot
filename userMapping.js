@@ -1,3 +1,3 @@
 module.exports = {
-  'github_username': 'slack_username'
+  'github_username': 'slack_user_id',
 };
